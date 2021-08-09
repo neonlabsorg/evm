@@ -18,6 +18,7 @@ mod utils;
 
 use evm_core::{ExitError, Opcode, Stack, H160, H256, U256};
 use evm_runtime::{CONFIG, Handler};
+use serde::{Serialize, Deserialize};
 
 macro_rules! try_or_fail {
 	( $inner:expr, $e:expr ) => (
@@ -33,6 +34,7 @@ macro_rules! try_or_fail {
 
 /// EVM gasometer.
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 pub struct Gasometer {
 	gas_limit: u64,
 	inner: Result<Inner, ExitError>
@@ -529,6 +531,7 @@ pub fn dynamic_opcode_cost<H: Handler>(
 }
 
 #[derive(Clone)]
+#[derive(Serialize, Deserialize)]
 struct Inner {
 	memory_cost: u64,
 	used_gas: u64,
