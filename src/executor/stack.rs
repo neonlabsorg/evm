@@ -554,8 +554,6 @@ impl<'backend, B: 'backend + Backend> StackExecutor<'backend, B> {
 			}
 		}
 
-		let transfer_clone = transfer.clone();
-
 		if let Some(transfer) = transfer {
 			match substate.transfer(&transfer) {
 				Ok(()) => (),
@@ -580,7 +578,7 @@ impl<'backend, B: 'backend + Backend> StackExecutor<'backend, B> {
 			}
 		}
 
-		let hook_res = self.backend.call_inner(code_address, transfer_clone, input.clone(), Some(target_gas), is_static, take_l64, take_stipend);
+		let hook_res = self.backend.call_inner(code_address, transfer, input.clone(), Some(target_gas), is_static, take_l64, take_stipend);
 		if let Some(hook_res) = hook_res {
 			match &hook_res {
 				Capture::Exit((reason, _return_data)) => {
