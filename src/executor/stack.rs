@@ -3,9 +3,10 @@
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::vec::Vec;
 use core::convert::Infallible;
+use evm_runtime::CONFIG;
 
 use crate::{
-	Capture, Config, Context, CreateScheme, ExitError, ExitReason, ExitSucceed, H160,
+	Capture, Context, CreateScheme, ExitError, ExitReason, ExitSucceed, H160,
 	H256, Handler, Opcode, Runtime, Stack, Transfer, Valids, U256,
 };
 use crate::backend::{Apply, Backend, Basic, Log};
@@ -34,10 +35,9 @@ type PrecompileFn = fn(H160, &[u8], Option<u64>) -> PrecompileResult;
 
 /// Stack-based executor.
 #[derive(Clone)]
-pub struct StackExecutor<'backend, 'config, B> {
+pub struct StackExecutor<'backend, B> {
 	backend: &'backend B,
-	config: &'config Config,
-	gasometer: Gasometer<'config>,
+	gasometer: Gasometer,
 	state: BTreeMap<H160, StackAccount>,
 	deleted: BTreeSet<H160>,
 	logs: Vec<Log>,
@@ -54,29 +54,26 @@ const fn no_precompile(
 	None
 }
 
-impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, B> {
+impl<'backend, B: 'backend + Backend> StackExecutor<'backend, B> {
 	/// Create a new stack-based executor.
 	pub fn new(
 		backend: &'backend B,
 		gas_limit: u64,
-		config: &'config Config,
 	) -> Self {
-		Self::new_with_precompile(backend, gas_limit, config, no_precompile)
+		Self::new_with_precompile(backend, gas_limit, no_precompile)
 	}
 
 	/// Create a new stack-based executor with given precompiles.
 	pub fn new_with_precompile(
 		backend: &'backend B,
 		gas_limit: u64,
-		config: &'config Config,
 		precompile: PrecompileFn,
 	) -> Self {
 		Self {
 			backend,
-			gasometer: Gasometer::new(gas_limit, config),
+			gasometer: Gasometer::new(gas_limit),
 			state: BTreeMap::new(),
 			deleted: BTreeSet::new(),
-			config,
 			logs: Vec::new(),
 			precompile,
 			is_static: false,
@@ -86,11 +83,10 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 
 	/// Create a substate executor from the current executor.
 	#[must_use]
-	pub fn substate(&self, gas_limit: u64, is_static: bool) -> StackExecutor<'backend, 'config, B> {
+	pub fn substate(&self, gas_limit: u64, is_static: bool) -> StackExecutor<'backend, B> {
 		Self {
 			backend: self.backend,
-			gasometer: Gasometer::new(gas_limit, self.gasometer.config()),
-			config: self.config,
+			gasometer: Gasometer::new(gas_limit),
 			state: self.state.clone(),
 			deleted: self.deleted.clone(),
 			logs: self.logs.clone(),
@@ -378,7 +374,7 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 		}
 
 		if let Some(depth) = self.depth {
-			if depth + 1 > self.config.call_stack_limit {
+			if depth + 1 > CONFIG.call_stack_limit {
 				return Capture::Exit((ExitError::CallTooDeep.into(), None, Vec::new()))
 			}
 		}
@@ -388,7 +384,7 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 		}
 
 		let mut after_gas = self.gasometer.gas(); // 0;
-		if take_l64 && self.config.call_l64_after_gas {
+		if take_l64 && CONFIG.call_l64_after_gas {
 			after_gas = l64(after_gas);
 		}
 		let target_gas = target_gas.unwrap_or(after_gas);
@@ -444,7 +440,7 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 			},
 		}
 
-		if self.config.create_increase_nonce {
+		if CONFIG.create_increase_nonce {
 			substate.account_mut(address).basic.nonce += U256::one();
 		}
 
@@ -454,7 +450,6 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 			valids,
 			Vec::new(),
 			context,
-			self.config,
 		);
 
 		let reason = substate.execute(&mut runtime);
@@ -464,7 +459,7 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 			ExitReason::Succeed(s) => {
 				let out = runtime.machine().return_value();
 
-				if let Some(limit) = self.config.create_contract_limit {
+				if let Some(limit) = CONFIG.create_contract_limit {
 					if out.len() > limit {
 						substate.gasometer.fail();
 						let _ = self.merge_fail(substate);
@@ -531,7 +526,7 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 		}
 
 		let mut after_gas = self.gasometer.gas(); // 0;
-		if take_l64 && self.config.call_l64_after_gas {
+		if take_l64 && CONFIG.call_l64_after_gas {
 			after_gas = l64(after_gas);
 		}
 
@@ -542,7 +537,7 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 
 		if let Some(transfer) = transfer.as_ref() {
 			if take_stipend && transfer.value != U256::zero() {
-				gas_limit = gas_limit.saturating_add(self.config.call_stipend);
+				gas_limit = gas_limit.saturating_add(CONFIG.call_stipend);
 			}
 		}
 
@@ -553,7 +548,7 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 		substate.account_mut(context.address);
 
 		if let Some(depth) = self.depth {
-			if depth + 1 > self.config.call_stack_limit {
+			if depth + 1 > CONFIG.call_stack_limit {
 				let _ = self.merge_revert(substate);
 				return Capture::Exit((ExitError::CallTooDeep.into(), Vec::new()))
 			}
@@ -615,7 +610,6 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 			valids,
 			input,
 			context,
-			self.config,
 		);
 
 		let reason = substate.execute(&mut runtime);
@@ -643,7 +637,7 @@ impl<'backend, 'config, B: 'backend + Backend> StackExecutor<'backend, 'config, 
 	}
 }
 
-impl<'backend, 'config, B: Backend> Handler for StackExecutor<'backend, 'config, B> {
+impl<'backend, B: Backend> Handler for StackExecutor<'backend, B> {
 	type CreateInterrupt = Infallible;
 	type CreateFeedback = Infallible;
 	type CallInterrupt = Infallible;
@@ -731,7 +725,7 @@ impl<'backend, 'config, B: Backend> Handler for StackExecutor<'backend, 'config,
 	#[allow(clippy::option_if_let_else)]
 	#[allow(clippy::map_unwrap_or)]
 	fn exists(&self, address: H160) -> bool {
-		if self.config.empty_considered_exists {
+		if CONFIG.empty_considered_exists {
 			self.state.get(&address).is_some() || self.backend.exists(address)
 		} else if let Some(account) = self.state.get(&address) {
 			account.basic.nonce != U256::zero() ||
@@ -833,7 +827,6 @@ impl<'backend, 'config, B: Backend> Handler for StackExecutor<'backend, 'config,
 				opcode,
 				stack,
 				is_static,
-				self.config,
 				self,
 			)?;
 			self.gasometer.record_dynamic_cost(gas_cost, memory_cost)?;

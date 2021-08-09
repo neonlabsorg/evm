@@ -1,9 +1,9 @@
 use crate::consts::*;
-use crate::Config;
 use evm_core::{ExitError, H256, U256};
+use evm_runtime::CONFIG;
 
-pub fn call_extra_check(gas: U256, after_gas: u64, config: &Config) -> Result<(), ExitError> {
-	if config.err_on_call_with_more_gas && U256::from(after_gas) < gas {
+pub fn call_extra_check(gas: U256, after_gas: u64) -> Result<(), ExitError> {
+	if CONFIG.err_on_call_with_more_gas && U256::from(after_gas) < gas {
 		Err(ExitError::OutOfGas)
 	} else {
 		Ok(())
@@ -18,28 +18,28 @@ pub fn suicide_refund(already_removed: bool) -> i64 {
 	}
 }
 
-pub fn sstore_refund(original: H256, current: H256, new: H256, config: &Config) -> i64 {
-	if config.sstore_gas_metering {
+pub fn sstore_refund(original: H256, current: H256, new: H256) -> i64 {
+	if CONFIG.sstore_gas_metering {
 		if current == new {
 			0
 		} else {
 			if original == current && new == H256::default() {
-				config.refund_sstore_clears
+				CONFIG.refund_sstore_clears
 			} else {
 				let mut refund = 0;
 				if original != H256::default() {
 					if current == H256::default() {
-						refund -= config.refund_sstore_clears;
+						refund -= CONFIG.refund_sstore_clears;
 					} else if new == H256::default() {
-						refund += config.refund_sstore_clears;
+						refund += CONFIG.refund_sstore_clears;
 					}
 				}
 
 				if original == new {
 					if original == H256::default() {
-						refund += (config.gas_sstore_set - config.gas_sload) as i64;
+						refund += (CONFIG.gas_sstore_set - CONFIG.gas_sload) as i64;
 					} else {
-						refund += (config.gas_sstore_reset - config.gas_sload) as i64;
+						refund += (CONFIG.gas_sstore_reset - CONFIG.gas_sload) as i64;
 					}
 				}
 
@@ -48,7 +48,7 @@ pub fn sstore_refund(original: H256, current: H256, new: H256, config: &Config) 
 		}
 	} else {
 		if current != H256::default() && new == H256::default() {
-			config.refund_sstore_clears
+			CONFIG.refund_sstore_clears
 		} else {
 			0
 		}
@@ -71,13 +71,13 @@ pub fn create2_cost(len: U256) -> Result<u64, ExitError> {
 	Ok(gas.as_u64())
 }
 
-pub fn exp_cost(power: U256, config: &Config) -> Result<u64, ExitError> {
+pub fn exp_cost(power: U256) -> Result<u64, ExitError> {
 	if power == U256::zero() {
 		Ok(G_EXP)
 	} else {
 		let gas = U256::from(G_EXP)
 			.checked_add(
-				U256::from(config.gas_expbyte)
+				U256::from(CONFIG.gas_expbyte)
 					.checked_mul(U256::from(crate::utils::log2floor(power) / 8 + 1))
 					.ok_or(ExitError::OutOfGas)?
 			)
@@ -112,11 +112,11 @@ pub fn verylowcopy_cost(len: U256) -> Result<u64, ExitError> {
 	Ok(gas.as_u64())
 }
 
-pub fn extcodecopy_cost(len: U256, config: &Config) -> Result<u64, ExitError> {
+pub fn extcodecopy_cost(len: U256) -> Result<u64, ExitError> {
 	let wordd = len / U256::from(32);
 	let wordr = len % U256::from(32);
 
-	let gas = U256::from(config.gas_ext_code).checked_add(
+	let gas = U256::from(CONFIG.gas_ext_code).checked_add(
 		U256::from(G_COPY).checked_mul(
 			if wordr == U256::zero() {
 				wordd
@@ -168,38 +168,38 @@ pub fn sha3_cost(len: U256) -> Result<u64, ExitError> {
 	Ok(gas.as_u64())
 }
 
-pub fn sstore_cost(original: H256, current: H256, new: H256, gas: u64, config: &Config) -> Result<u64, ExitError> {
-	if config.sstore_gas_metering {
-		if config.sstore_revert_under_stipend {
-			if gas < config.call_stipend {
+pub fn sstore_cost(original: H256, current: H256, new: H256, gas: u64) -> Result<u64, ExitError> {
+	if CONFIG.sstore_gas_metering {
+		if CONFIG.sstore_revert_under_stipend {
+			if gas < CONFIG.call_stipend {
 				return Err(ExitError::OutOfGas)
 			}
 		}
 
 		Ok(if new == current {
-			config.gas_sload
+			CONFIG.gas_sload
 		} else {
 			if original == current {
 				if original == H256::zero() {
-					config.gas_sstore_set
+					CONFIG.gas_sstore_set
 				} else {
-					config.gas_sstore_reset
+					CONFIG.gas_sstore_reset
 				}
 			} else {
-				config.gas_sload
+				CONFIG.gas_sload
 			}
 		})
 	} else {
 		Ok(if current == H256::zero() && new != H256::zero() {
-			config.gas_sstore_set
+			CONFIG.gas_sstore_set
 		} else {
-			config.gas_sstore_reset
+			CONFIG.gas_sstore_reset
 		})
 	}
 }
 
-pub fn suicide_cost(value: U256, target_exists: bool, config: &Config) -> u64 {
-	let eip161 = !config.empty_considered_exists;
+pub fn suicide_cost(value: U256, target_exists: bool) -> u64 {
+	let eip161 = !CONFIG.empty_considered_exists;
 	let should_charge_topup = if eip161 {
 		value != U256::zero() && !target_exists
 	} else {
@@ -207,12 +207,12 @@ pub fn suicide_cost(value: U256, target_exists: bool, config: &Config) -> u64 {
 	};
 
 	let suicide_gas_topup = if should_charge_topup {
-		config.gas_suicide_new_account
+		CONFIG.gas_suicide_new_account
 	} else {
 		0
 	};
 
-	config.gas_suicide + suicide_gas_topup
+	CONFIG.gas_suicide + suicide_gas_topup
 }
 
 pub fn call_cost(
@@ -220,12 +220,11 @@ pub fn call_cost(
 	is_call_or_callcode: bool,
 	is_call_or_staticcall: bool,
 	new_account: bool,
-	config: &Config,
 ) -> u64 {
 	let transfers_value = value != U256::default();
-	config.gas_call +
+	CONFIG.gas_call +
 		xfer_cost(is_call_or_callcode, transfers_value) +
-		new_cost(is_call_or_staticcall, new_account, transfers_value, config)
+		new_cost(is_call_or_staticcall, new_account, transfers_value)
 }
 
 fn xfer_cost(
@@ -243,9 +242,8 @@ fn new_cost(
 	is_call_or_staticcall: bool,
 	new_account: bool,
 	transfers_value: bool,
-	config: &Config,
 ) -> u64 {
-	let eip161 = !config.empty_considered_exists;
+	let eip161 = !CONFIG.empty_considered_exists;
 	if is_call_or_staticcall {
 		if eip161 {
 			if transfers_value && new_account {

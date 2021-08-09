@@ -84,32 +84,27 @@ macro_rules! step {
 /// The runtime wraps an EVM `Machine` with support of return data and context.
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Runtime<'config> {
+pub struct Runtime {
 	machine: Machine,
 	status: Result<(), ExitReason>,
 	#[cfg_attr(feature = "with-serde", serde(with = "serde_bytes"))]
 	return_data_buffer: Vec<u8>,
 	context: Context,
-	#[cfg_attr(feature = "with-serde", serde(skip))]
-	#[cfg_attr(feature = "with-serde", serde(default = "Config::default"))]
-	_config: &'config Config,
 }
 
-impl<'config> Runtime<'config> {
+impl Runtime {
 	/// Create a new runtime with given code and data.
 	pub fn new(
 		code: Vec<u8>,
 		valids: Vec<u8>,
 		data: Vec<u8>,
 		context: Context,
-		config: &'config Config,
 	) -> Self {
 		Self {
-			machine: Machine::new(code, valids, data, config.stack_limit, config.memory_limit),
+			machine: Machine::new(code, valids, data, CONFIG.stack_limit, CONFIG.memory_limit),
 			status: Ok(()),
 			return_data_buffer: Vec::new(),
 			context,
-			_config: config,
 		}
 	}
 
@@ -132,7 +127,7 @@ impl<'config> Runtime<'config> {
 	pub fn step<'a, H: Handler>(
 		&'a mut self,
 		handler: &mut H,
-	) -> Result<(), Capture<ExitReason, Resolve<'a, 'config, H>>> {
+	) -> Result<(), Capture<ExitReason, Resolve<'a, H>>> {
 		step!(self, handler, return Err; Ok)
 	}
 
@@ -141,7 +136,7 @@ impl<'config> Runtime<'config> {
 		&'a mut self,
 		max_steps: u64,
 		handler: &mut H,
-	) -> (u64, Capture<ExitReason, Resolve<'a, 'config, H>>) {
+	) -> (u64, Capture<ExitReason, Resolve<'a, H>>) {
 		if let Err(e) = self.status {
 			return (0, Capture::Exit(e));
 		}
@@ -266,8 +261,7 @@ pub struct Config {
 	pub estimate: bool,
 }
 
-
-const DEFAULT_CONFIG: Config = Config::istanbul();
+pub const CONFIG: Config = Config::istanbul();
 
 impl Config {
 	/// Frontier hard fork configuration.
@@ -354,6 +348,6 @@ impl Config {
 
 	/// Reference to default configuration
 	pub fn default() -> &'static Config {
-		&DEFAULT_CONFIG
+		&CONFIG
 	}
 }
