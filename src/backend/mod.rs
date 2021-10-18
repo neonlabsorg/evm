@@ -3,9 +3,6 @@
 //! Backends store state information of the VM, and exposes it to runtime.
 
 extern crate alloc;
-mod memory;
-
-pub use self::memory::{MemoryBackend, MemoryVicinity, MemoryAccount};
 
 use alloc::vec::Vec;
 use core::convert::Infallible;
@@ -48,8 +45,8 @@ pub enum Apply<I> {
 	Modify {
 		/// Address.
 		address: H160,
-		/// Basic information of the address.
-		basic: Basic,
+		/// Nonce of the address.
+		nonce: U256,
 		/// Code. `None` means leaving it unchanged.
 		code_and_valids: Option<(Vec<u8>, Vec<u8>)>,
 		/// Storage iterator.
