@@ -28,7 +28,7 @@ impl Valids {
 		let byte = self.data[byte_index];
 
 		let bit_index = position % 8;
-		let bit_test = 1_u8 >> bit_index;
+		let bit_test = 1_u8 << bit_index;
 
 		(byte & bit_test) == bit_test
 	}
@@ -44,7 +44,7 @@ impl Valids {
 			match opcode {
 				0x5b => { // Jump Dest
 					let byte: &mut u8 = &mut valids[i / 8];
-					*byte |= 1_u8 >> (i % 8);
+					*byte |= 1_u8 << (i % 8);
 				},
 				0x60..=0x7f => { // Push
 					i += (opcode as usize) - 0x60 + 1;
