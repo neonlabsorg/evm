@@ -105,6 +105,11 @@ impl Machine {
 		self.code.get(position).map(|v| (Opcode(*v), &self.stack))
 	}
 
+	/// Gets return value len by `return_range`
+	pub fn return_value_len(&self) -> usize {
+		self.return_range.end - self.return_range.start
+	}
+
 	/// Copy and get the return value of the machine, if any.
 	#[must_use]
 	pub fn return_value(&self) -> Vec<u8> {
