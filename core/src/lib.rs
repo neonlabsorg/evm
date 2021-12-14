@@ -106,6 +106,7 @@ impl Machine {
 	}
 
 	/// Gets return value len by `return_range`
+	#[must_use]
 	pub fn return_value_len(&self) -> usize {
 		self.return_range.end - self.return_range.start
 	}
