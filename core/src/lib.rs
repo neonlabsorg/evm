@@ -68,6 +68,11 @@ impl Machine {
 	/// Mutable reference of machine memory.
 	pub fn memory_mut(&mut self) -> &mut Memory { &mut self.memory }
 
+        /// Return a reference of the program counter.
+        pub fn position(&self) -> &Result<usize, ExitReason> {
+                &self.position
+        }
+
 	/// Create a new machine with given code and data.
 	#[must_use]
 	pub fn new(

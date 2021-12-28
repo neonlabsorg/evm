@@ -1,7 +1,7 @@
 //! EVM gasometer.
 
 #![deny(warnings)]
-#![forbid(unsafe_code, unused_variables, unused_imports)]
+#![forbid(unsafe_code, unused_variables)]
 #![deny(clippy::all, clippy::pedantic, clippy::nursery)]
 #![allow(
 	clippy::module_name_repetitions,
@@ -9,7 +9,24 @@
 	clippy::missing_panics_doc
 )]
 
+#![cfg_attr(not(feature = "tracing"), forbid(unused_imports))]
 #![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(feature = "tracing")]
+pub mod tracing;
+
+#[cfg(feature = "tracing")]
+macro_rules! event {
+	($x:expr) => {
+		use crate::tracing::Event::*;
+		$x.emit();
+	}
+}
+
+#[cfg(not(feature = "tracing"))]
+macro_rules! event {
+	($x:expr) => { }
+}
 
 mod consts;
 mod costs;
@@ -18,7 +35,6 @@ mod utils;
 
 use evm_core::{ExitError, Opcode, Stack, H160, H256, U256};
 use evm_runtime::{CONFIG, Handler};
-use serde::{Serialize, Deserialize};
 
 macro_rules! try_or_fail {
 	( $inner:expr, $e:expr ) => (
@@ -32,9 +48,17 @@ macro_rules! try_or_fail {
 	)
 }
 
+#[derive(Debug, Copy, Clone)]
+pub struct Snapshot {
+    pub gas_limit: u64,
+    pub memory_gas: u64,
+	pub used_gas: u64,
+	pub refunded_gas: i64,
+}
+
 /// EVM gasometer.
 #[derive(Clone)]
-#[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Gasometer {
 	gas_limit: u64,
 	inner: Result<Inner, ExitError>
@@ -112,6 +136,11 @@ impl Gasometer {
 		&mut self,
 		cost: u64
 	) -> Result<(), ExitError> {
+		event!(RecordCost {
+			cost,
+			snapshot: self.snapshot()?,
+		});
+
 		let all_gas_cost = self.total_used_gas() + cost;
 		if self.gas_limit < all_gas_cost {
 			self.inner = Err(ExitError::OutOfGas);
@@ -127,6 +156,11 @@ impl Gasometer {
 		&mut self,
 		refund: i64,
 	) -> Result<(), ExitError> {
+		event!(RecordRefund {
+			refund,			
+			snapshot: self.snapshot()?,
+		});
+
 		self.inner_mut()?.refunded_gas += refund;
 		Ok(())
 	}
@@ -157,6 +191,13 @@ impl Gasometer {
 		let gas_refund = self.inner_mut()?.gas_refund(cost.clone());
 		let used_gas = self.inner_mut()?.used_gas;
 
+		event!(RecordDynamicCost {
+			gas_cost,
+			memory_gas,
+			gas_refund, 
+			snapshot: self.snapshot()?,
+		});
+
 		let all_gas_cost = memory_gas + used_gas + gas_cost;
 		if self.gas_limit < all_gas_cost {
 			self.inner = Err(ExitError::OutOfGas);
@@ -178,6 +219,11 @@ impl Gasometer {
 		&mut self,
 		stipend: u64,
 	) -> Result<(), ExitError> {
+		event!(RecordStipend {
+			stipend,
+			snapshot: self.snapshot()?,
+		});
+
 		self.inner_mut()?.used_gas -= stipend;
 		Ok(())
 	}
@@ -200,6 +246,11 @@ impl Gasometer {
 			},
 		};
 
+		event!(RecordTransaction {
+			cost: gas_cost,
+			snapshot: self.snapshot()?,
+		});
+
 		if self.gas() < gas_cost {
 			self.inner = Err(ExitError::OutOfGas);
 			return Err(ExitError::OutOfGas);
@@ -207,6 +258,16 @@ impl Gasometer {
 
 		self.inner_mut()?.used_gas += gas_cost;
 		Ok(())
+	}
+
+	pub fn snapshot(&self) -> Result<Snapshot, ExitError> {
+		let inner = self.inner.as_ref().map_err(|e| e.clone())?;
+		Ok(Snapshot {
+			gas_limit: self.gas_limit,
+			memory_gas: inner.memory_cost,
+			used_gas: inner.used_gas,
+			refunded_gas: inner.refunded_gas,
+		})
 	}
 }
 
@@ -531,7 +592,7 @@ pub fn dynamic_opcode_cost<H: Handler>(
 }
 
 #[derive(Clone)]
-#[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
 struct Inner {
 	memory_cost: u64,
 	used_gas: u64,

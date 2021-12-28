@@ -1,17 +1,33 @@
 //! Runtime layer for EVM.
 
 #![deny(warnings)]
-#![forbid(unsafe_code, unused_variables, unused_imports)]
+#![forbid(unsafe_code, unused_variables)]
 #![deny(clippy::all, clippy::pedantic, clippy::nursery)]
 #![allow(
 	clippy::module_name_repetitions,
 	clippy::missing_errors_doc,
 	clippy::missing_panics_doc
 )]
-
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "tracing"), forbid(unused_imports))]
 
 extern crate alloc;
+
+#[cfg(feature = "tracing")]
+pub mod tracing;
+
+#[cfg(feature = "tracing")]
+macro_rules! event {
+	($x:expr) => {
+		use crate::tracing::Event::*;
+                crate::tracing::with(|listener| listener.event($x));
+	}
+}
+
+#[cfg(not(feature = "tracing"))]
+macro_rules! event {
+	($x:expr) => {}
+}
 
 mod eval;
 mod context;
@@ -29,7 +45,17 @@ use alloc::vec::Vec;
 
 macro_rules! step {
 	( $self:expr, $handler:expr, $return:tt $($err:path)?; $($ok:path)? ) => ({
+		let mut skip_step_result_event = true;
 		if let Some((opcode, stack)) = $self.machine.inspect() {
+			event!(Step {
+				context: &$self.context,
+				opcode,
+				position: $self.machine.position(),
+				stack,
+				memory: $self.machine.memory()
+			});
+			skip_step_result_event = false;
+	
 			match $handler.pre_validate(&$self.context, opcode, stack) {
 				Ok(()) => (),
 				Err(e) => {
@@ -47,7 +73,18 @@ macro_rules! step {
 			},
 		}
 
-		match $self.machine.step() {
+		let result = $self.machine.step();
+
+		if !skip_step_result_event {
+			event!(StepResult {
+				result: &result,
+				return_value: &$self.machine.return_value(),
+							stack: $self.machine.stack(),
+							memory: $self.machine.memory(),
+			});
+		}
+
+		match result {
 			Ok(()) => $($ok)?(()),
 			Err(Capture::Exit(e)) => {
 				$self.status = Err(e.clone());
