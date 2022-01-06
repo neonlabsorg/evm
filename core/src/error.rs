@@ -125,6 +125,9 @@ pub enum ExitError {
 	PCUnderflow,
 	/// Attempt to create an empty account (runtime, unused).
 	CreateEmpty,
+
+	/// Indicates that a STATICCALL tried to change state
+	StaticModeViolation,
 }
 
 impl From<ExitError> for ExitReason {
