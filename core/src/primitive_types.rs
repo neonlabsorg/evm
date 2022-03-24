@@ -28,6 +28,7 @@ construct_uint! {
 
 impl_rlp::impl_uint_rlp!(U256, 4);
 impl_rlp::impl_fixed_hash_rlp!(H160, 20);
+impl_rlp::impl_fixed_hash_rlp!(H256, 32);
 
 
 impl From<U256> for U512 {
