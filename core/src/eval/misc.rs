@@ -29,10 +29,12 @@ pub fn calldataload(state: &mut Machine) -> Control {
 	trace_op!("CallDataLoad: {}", index);
 
 	let index = as_usize_or_fail!(index);
-	let len = if index > state.data.len() { 0 } else { min(32, state.data.len() - index) };
-
 	let mut load = [0_u8; 32];
-	load[0..len].copy_from_slice(&state.data[index..index + len]);
+
+	if index < state.data.len() {
+		let len = min(32, state.data.len() - index);
+		load[0..len].copy_from_slice(&state.data[index..index + len]);
+	}
 
 	push!(state, H256::from(load));
 	Control::Continue(1)
