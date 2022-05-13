@@ -61,14 +61,4 @@ macro_rules! as_usize_or_fail {
 			$v.as_usize()
 		}
 	};
-
-	( $v:expr, $reason:expr ) => {
-		{
-			if $v > U256::from(usize::max_value()) {
-				return Control::Exit($reason.into())
-			}
-
-			$v.as_usize()
-		}
-	};
 }
