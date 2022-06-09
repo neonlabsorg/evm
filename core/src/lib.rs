@@ -69,7 +69,7 @@ impl Machine {
 	pub fn memory_mut(&mut self) -> &mut Memory { &mut self.memory }
 
         /// Return a reference of the program counter.
-        pub fn position(&self) -> &Result<usize, ExitReason> {
+	pub fn position(&self) -> &Result<usize, ExitReason> {
                 &self.position
         }
 

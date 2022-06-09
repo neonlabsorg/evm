@@ -13,15 +13,15 @@
 
 extern crate alloc;
 
-// #[cfg(feature = "tracing")]
+#[cfg(feature = "tracing")]
 pub mod tracing;
 
 #[cfg(feature = "tracing")]
 macro_rules! event {
-	($x:expr) => {
-		use crate::tracing::Event::*;
-                crate::tracing::with(|listener| listener.event($x));
-	}
+    ($x:expr) => {
+        use crate::tracing::Event::*;
+        crate::tracing::send($x);
+    };
 }
 
 #[cfg(not(feature = "tracing"))]
@@ -40,6 +40,8 @@ pub use crate::context::{CreateScheme, CallScheme, Context};
 pub use crate::interrupt::{Resolve, ResolveCall, ResolveCreate};
 pub use crate::handler::{Transfer, Handler};
 pub use crate::eval::{save_return_value, save_created_address, Control};
+#[cfg(feature = "tracing")]
+pub use crate::tracing::Event;
 
 use alloc::vec::Vec;
 
@@ -48,11 +50,11 @@ macro_rules! step {
 		let mut skip_step_result_event = true;
 		if let Some((opcode, stack)) = $self.machine.inspect() {
 			event!(Step {
-				context: &$self.context,
+				context: $self.context.clone(),
 				opcode,
-				position: $self.machine.position(),
-				stack,
-				memory: $self.machine.memory()
+				position: $self.machine.position().clone(),
+				stack: stack.clone(),
+				memory: $self.machine.memory().clone()
 			});
 			skip_step_result_event = false;
 	
@@ -77,10 +79,10 @@ macro_rules! step {
 
 		if !skip_step_result_event {
 			event!(StepResult {
-				result: &result,
-				return_value: &$self.machine.return_value(),
-							stack: $self.machine.stack(),
-							memory: $self.machine.memory(),
+				result: result,
+				return_value: $self.machine.return_value(),
+							stack: $self.machine.stack().clone(),
+							memory: $self.machine.memory().clone(),
 			});
 		}
 
