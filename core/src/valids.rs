@@ -4,6 +4,7 @@ use alloc::{vec, vec::Vec};
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub struct Valids{
 	#[cfg_attr(feature = "with-serde", serde(with = "serde_bytes"))]
 	data: Vec<u8>
