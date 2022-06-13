@@ -121,6 +121,7 @@ macro_rules! step {
 /// The runtime wraps an EVM `Machine` with support of return data and context.
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub struct Runtime {
 	machine: Machine,
 	status: Result<(), ExitReason>,

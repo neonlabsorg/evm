@@ -182,7 +182,7 @@ pub fn ret(state: &mut Machine) -> Control {
 	let start = as_usize_or_fail!(start);
 	let len = as_usize_or_fail!(len);
 	try_or_fail!(state.memory.resize_offset(start, len));
-	state.return_range = start..(start + len);
+	state.return_range = (start, len);
 	Control::Exit(ExitSucceed::Returned.into())
 }
 
@@ -192,6 +192,6 @@ pub fn revert(state: &mut Machine) -> Control {
 	let start = as_usize_or_fail!(start);
 	let len = as_usize_or_fail!(len);
 	try_or_fail!(state.memory.resize_offset(start, len));
-	state.return_range = start..(start + len);
+	state.return_range = (start, len);
 	Control::Exit(ExitRevert::Reverted.into())
 }

@@ -30,6 +30,8 @@ pub trait Handler {
 	/// Get keccak hash from data.
 	fn keccak256_h256(&self, data: &[u8]) -> H256;
 
+	/// Get account nonce
+	fn nonce(&self, address: H160) -> U256;
 	/// Get balance of address.
 	fn balance(&self, address: H160) -> U256;
 	/// Get code size of address.
@@ -42,8 +44,6 @@ pub trait Handler {
 	fn valids(&self, address: H160) -> Vec<u8>;
 	/// Get storage value of address at index.
 	fn storage(&self, address: H160, index: U256) -> U256;
-	/// Get original storage value of address at index.
-	fn original_storage(&self, address: H160, index: U256) -> U256;
 
 	/// Get the gas left value.
 	fn gas_left(&self) -> U256;
@@ -65,11 +65,6 @@ pub trait Handler {
 	fn block_gas_limit(&self) -> U256;
 	/// Get environmental chain ID.
 	fn chain_id(&self) -> U256;
-
-	/// Check whether an address exists.
-	fn exists(&self, address: H160) -> bool;
-	/// Check whether an address has already been deleted.
-	fn deleted(&self, address: H160) -> bool;
 
 	/// Set storage value of address at index.
 	fn set_storage(&mut self, address: H160, index: U256, value: U256) -> Result<(), ExitError>;
