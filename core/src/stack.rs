@@ -167,4 +167,9 @@ impl Stack {
 
 		Ok(())
 	}
+
+	pub fn data(&self) -> &[U256] {
+		&self.data
+	}
+
 }

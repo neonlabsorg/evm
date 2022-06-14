@@ -49,7 +49,7 @@ impl Memory {
 		self.len() == 0
 	}
 
-        pub fn data(&self) -> &[u8] {
+	pub fn data(&self) -> &[u8] {
             &self.data
         }
 
@@ -153,4 +153,5 @@ impl Memory {
 
 		self.set(memory_offset, data_by_offset, Some(len))
 	}
+
 }
