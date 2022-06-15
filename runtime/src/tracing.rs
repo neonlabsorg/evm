@@ -134,17 +134,15 @@ pub enum Event{
 
 /// EVM stack.
 #[derive(Clone, Debug)]
-pub struct StackOnStack<'a> {
-    // #[cfg_attr(feature = "with-serde", serde(with="serde_vec_u256"))]
-    pub data: &'a[U256],
+pub struct StackOnStack{
+    pub data: u64,/// &[U256],
     pub data_len: usize,
     pub limit: usize,
 }
 
 #[derive(Clone, Debug)]
-pub struct MemoryOnStack<'a> {
-    // #[cfg_attr(feature = "with-serde", serde(with = "serde_bytes"))]
-    pub data: &'a[u8],
+pub struct MemoryOnStack {
+    pub data: u64, // &'a[u8],
     pub data_len: usize,
     pub effective_len: usize,
     pub limit: usize,
@@ -152,13 +150,13 @@ pub struct MemoryOnStack<'a> {
 
 
 #[derive(Debug,  Clone)]
-pub struct CallTrace<'a>{
+pub struct CallTrace{
     /// Called code address
     pub code_address: H160,
     /// Transfer parameters
     pub transfer:  Option<Transfer>,
     /// Input data provided to the call
-    pub input: &'a[u8],
+    pub input: u64,
     pub input_len: usize,
     /// Target gas
     pub target_gas: Option<u64>,
@@ -169,7 +167,7 @@ pub struct CallTrace<'a>{
 }
 
 #[derive(Debug,  Clone)]
-pub struct CreateTrace<'a>{
+pub struct CreateTrace{
     /// Creator address
     pub caller: H160,
     /// Address of the created account
@@ -179,18 +177,16 @@ pub struct CreateTrace<'a>{
     /// Value the created account is endowed with
     pub value: U256,
     /// Init code
-    pub init_code: &'a[u8],
+    pub init_code: u64,
     pub init_code_len: usize,
     /// Target Gas
     pub target_gas: Option<u64>,
 }
 
 #[derive(Debug,  Clone)]
-pub struct ExitTrace<'a>{
-    /// Exit reason
+pub struct ExitTrace{
     pub reason: ExitReason,
-    /// Return value
-    pub return_value: &'a[u8],
+    pub return_value: u64,
     pub return_value_len: usize,
 }
 
@@ -205,7 +201,7 @@ pub struct SuicideTrace{
 }
 
 #[derive(Debug,  Clone)]
-pub struct TransactCallTrace<'a>{
+pub struct TransactCallTrace{
     /// Caller account address
     pub caller: H160,
     /// Destination account address
@@ -213,7 +209,7 @@ pub struct TransactCallTrace<'a>{
     /// Value transferred to the destination account
     pub value: U256,
     /// Input data provided to the call
-    pub data: &'a[u8],
+    pub data: u64,
     pub data_len: usize,
     /// Gas Limit
     pub gas_limit: U256,
@@ -221,13 +217,13 @@ pub struct TransactCallTrace<'a>{
 
 
 #[derive(Debug,  Clone)]
-pub struct TransactCreateTrace<'a>{
+pub struct TransactCreateTrace{
     /// Creator address
     pub caller: H160,
     /// Value the created account is endowed with
     pub value: U256,
     /// Init code
-    pub init_code: &'a[u8],
+    pub init_code: u64,
     pub init_code_len: usize,
     /// Gas limit
     pub gas_limit: U256,
@@ -236,13 +232,13 @@ pub struct TransactCreateTrace<'a>{
 }
 
 #[derive(Debug,  Clone)]
-pub struct TransactCreate2Trace<'a>{
+pub struct TransactCreate2Trace{
     /// Creator address
     pub caller: H160,
     /// Value the created account is endowed with
     pub value: U256,
     /// Init code
-    pub init_code: &'a[u8],
+    pub init_code: u64,
     pub init_code_len: usize,
     /// Salt
     pub salt: H256,
@@ -253,21 +249,22 @@ pub struct TransactCreate2Trace<'a>{
 }
 
 #[derive(Debug,  Clone)]
-pub struct StepTrace<'a>{
+pub struct StepTrace{
     pub context: Context,
     pub opcode: Opcode,
     pub position: Result<usize, ExitReason>,
-    pub stack: StackOnStack<'a>,
-    pub memory: MemoryOnStack<'a>,
+    pub stack: StackOnStack,
+    pub memory: MemoryOnStack,
+    pub vec: Vec<u8>,
 }
 
 #[derive(Debug,  Clone)]
-pub struct StepResultTrace<'a>{
+pub struct StepResultTrace{
     pub result: Result<(), Capture<ExitReason, Trap>>,
-    pub return_value: &'a[u8],
+    pub return_value: u64,
     pub return_value_len: usize,
-    pub stack: StackOnStack<'a>,
-    pub memory: MemoryOnStack<'a>
+    pub stack: StackOnStack,
+    pub memory: MemoryOnStack,
 }
 
 #[derive(Debug,  Clone)]
@@ -286,27 +283,16 @@ pub struct SStoreTrace {
 
 /// Trace event
 #[derive(Debug,  Clone)]
-pub enum EventOnStack<'a>{
-    Call(CallTrace<'a>) ,
-    Create(CreateTrace<'a>) ,
+pub enum EventOnStack{
+    Call(CallTrace) ,
+    Create(CreateTrace) ,
     Suicide(SuicideTrace) ,
-    Exit(ExitTrace<'a>) ,
-    TransactCall(TransactCallTrace<'a>) ,
-    TransactCreate(TransactCreateTrace<'a>) ,
-    TransactCreate2(TransactCreate2Trace<'a>) ,
-    Step(StepTrace<'a>) ,
-    StepResult(StepResultTrace<'a>),
+    Exit(ExitTrace) ,
+    TransactCall(TransactCallTrace) ,
+    TransactCreate(TransactCreateTrace) ,
+    TransactCreate2(TransactCreate2Trace) ,
+    Step(StepTrace) ,
+    StepResult(StepResultTrace),
     SLoad(SLoadTrace),
     SStore(SStoreTrace),
 }
-
-// pub fn send(event: Event){
-//     let mut remaining: u64 =0;
-//     compute_meter_remaining::compute_meter_remaining(&mut remaining);
-//
-//     let mut message : Vec<u8> = Vec::new();
-//     bincode::serialize_into(&mut message, &event).unwrap();
-//     tracer_api::send_trace_message(message.as_slice());
-//
-//     compute_meter_set_remaining::compute_meter_set_remaining(remaining+12);
-// }

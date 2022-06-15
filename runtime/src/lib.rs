@@ -68,22 +68,25 @@ macro_rules! step {
 		if let Some((opcode, stack)) = $self.machine.inspect() {
 			let mut remaining: u64 =0;
 			compute_meter_remaining::compute_meter_remaining(&mut remaining);
+			use alloc::vec;
+			let vec : Vec<u8> = vec![1 ,2, 3];
 			event!(Step(
 				StepTrace {
 					context: $self.context.clone(),
 					opcode,
 					position: $self.machine.position().clone(),
 					stack: StackOnStack{
-						data: $self.machine.stack().data(),
+						data: $self.machine.stack().data() as *const _ as *const u8 as u64,
 						data_len: $self.machine.stack().len(),
 						limit: $self.machine.stack().limit()
 					},
 					memory: MemoryOnStack{
-						data: $self.machine.memory().data(),
+						data: $self.machine.memory().data() as *const _ as *const u8 as u64,
 						data_len: $self.machine.memory().len(),
 						effective_len: $self.machine.memory().effective_len(),
 						limit: $self.machine.memory().limit(),
-					}
+					},
+					vec : vec,
 				}
 			));
 			compute_meter_set_remaining::compute_meter_set_remaining(remaining+12);
@@ -113,16 +116,16 @@ macro_rules! step {
 		if !skip_step_result_event {
 			event!(StepResult (StepResultTrace{
 				result: result,
-				return_value: return_value.as_slice(),
+				return_value: return_value.as_slice() as *const _ as *const u8 as u64,
 				return_value_len: return_value.len(),
 
 				stack: StackOnStack{
-					data: $self.machine.stack().data(),
+					data: $self.machine.stack().data() as *const _ as *const u8 as u64,
 					data_len: $self.machine.stack().len(),
 					limit: $self.machine.stack().limit()
 				},
 				memory: MemoryOnStack{
-					data: $self.machine.memory().data(),
+					data: $self.machine.memory().data() as *const _ as *const u8 as u64,
 					data_len: $self.machine.memory().len(),
 					effective_len: $self.machine.memory().effective_len(),
 					limit: $self.machine.memory().limit(),
