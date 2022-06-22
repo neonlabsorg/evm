@@ -6,8 +6,8 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use core::convert::Infallible;
-use evm_runtime::CreateScheme;
-use crate::{Capture, Transfer, ExitReason, H160, H256, U256};
+use evm_core::{CreateScheme, Transfer};
+use crate::{Capture, ExitReason, H160, H256, U256};
 
 /// Basic account information.
 #[derive(Clone, Eq, PartialEq, Debug, Default)]

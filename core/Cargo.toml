@@ -17,6 +17,7 @@ impl-rlp = { version = "0.3", default-features = false }
 rlp = { version = "0.5", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 serde_bytes = { version = "0.11.5", optional = true }
+solana-program = { version = "=1.9.12", path = "/home/user/CLionProjects/neonlabs/solana/sdk/program", default_features = false }
 
 [dev-dependencies]
 hex = "0.4"
@@ -26,3 +27,4 @@ default = ["std"]
 with-codec = ["codec"]
 with-serde = ["serde", "serde_bytes"]
 std = ["log/std", "codec/std", "serde/std"]
+tracing = []

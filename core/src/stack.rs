@@ -68,6 +68,12 @@ impl Stack {
 		}
 	}
 
+	pub fn from(data: &[U256], limit: usize) -> Self {
+		Self {
+			data: Vec::from(data),
+			limit,
+		}
+	}
 	/// Stack limit.
 	#[must_use]
 	pub const fn limit(&self) -> usize {
@@ -169,6 +175,10 @@ impl Stack {
 	}
 
 	pub fn data(&self) -> &[U256] {
+		&self.data
+	}
+
+	pub fn data_vec(&self) -> &Vec<U256> {
 		&self.data
 	}
 

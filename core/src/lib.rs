@@ -1,7 +1,8 @@
 //! Core layer for EVM.
 
 #![deny(warnings)]
-#![forbid(unused_variables, unused_imports)]
+// #![forbid(unused_variables, unused_imports)]
+// #![forbid( unused_imports)]
 #![deny(clippy::all, clippy::pedantic, clippy::nursery)]
 #![allow(
 	clippy::module_name_repetitions,
@@ -22,6 +23,9 @@ mod error;
 mod eval;
 mod utils;
 mod primitive_types;
+mod context;
+#[cfg(feature = "tracing")]
+mod tracing;
 
 pub use crate::memory::Memory;
 pub use crate::stack::Stack;
@@ -29,10 +33,52 @@ pub use crate::valids::Valids;
 pub use crate::opcode::Opcode;
 pub use crate::error::{Trap, Capture, ExitReason, ExitSucceed, ExitError, ExitRevert, ExitFatal};
 pub use crate::primitive_types::{H160, H256, U256, U512};
+pub use crate::context::{Context, CreateScheme, CallScheme, Transfer};
 
 use core::ops::Range;
 use alloc::vec::Vec;
 use crate::eval::{eval, Control};
+
+#[cfg(feature = "tracing")]
+pub use crate::tracing::*;
+
+#[cfg(feature = "tracing")]
+#[allow(unused_imports)]
+use solana_program::{compute_meter_remaining, compute_meter_set_remaining, tracer_api};
+
+#[macro_export]
+#[cfg(feature = "tracing")]
+macro_rules! event {
+    ($x:expr) => {
+        // use crate::tracing::Event::*;
+		// use solana_program::tracer_api;
+
+	    // let mut remaining: u64 =0;
+    	// compute_meter_remaining::compute_meter_remaining(&mut remaining);
+		// remaining = remaining + 7;
+		let _ptr = &$x  as *const _ as *const u8;
+    	tracer_api::send_trace_message(ptr);
+
+	    // compute_meter_set_remaining::compute_meter_set_remaining(remaining);
+    };
+}
+
+
+#[macro_export]
+#[cfg(not(feature = "tracing"))]
+macro_rules! event {
+	($x:expr) => {}
+}
+
+#[cfg(feature = "tracing")]
+extern "C" {
+	fn sol_compute_meter_remaining() -> u64;
+}
+
+#[cfg(feature = "tracing")]
+extern "C" {
+	fn sol_compute_meter_set_remaining() -> u64;
+}
 
 /// Core execution layer for EVM.
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
@@ -126,7 +172,11 @@ impl Machine {
 	}
 
 	/// Loop stepping the machine, until it stops.
-	pub fn run<F>(&mut self, max_steps: u64, mut pre_validate: F) -> (u64, Capture<ExitReason, Trap>)
+	pub fn run<F>(&mut self,
+				  max_steps: u64,
+				  mut pre_validate: F,
+				  #[allow(unused_variables)] context : &Context
+	) -> (u64, Capture<ExitReason, Trap>)
 		where F: FnMut(Opcode, &Stack) -> Result<(), ExitError>
 	{
 		for step in 0..max_steps {
@@ -143,61 +193,66 @@ impl Machine {
 				}
 			};
 
+
+			//
+			// #[cfg(feature = "tracing")]
+			// unsafe {sol_compute_meter_remaining();}
+			// event!(Event::Step(
+			// 	StepTrace {
+			// 		context: context,
+			// 		opcode,
+			// 		position: &self.position,
+			// 		stack: &self.stack,
+			// 		memory: &self.memory,
+			// 	}
+			// ));
+			// #[cfg(feature = "tracing")]
+			// unsafe {sol_compute_meter_set_remaining();}
+
 			if let Err(error) = pre_validate(opcode, &self.stack()) {
 				let reason = ExitReason::from(error);
 				self.exit(reason);
 				return (step, Capture::Exit(reason));
 			}
 
-			match eval(self, opcode, position) {
+			let result = match eval(self, opcode, position) {
 				Control::Continue(p) => {
 					self.position = Ok(position + p);
+					Ok(())
 				},
 				Control::Exit(reason) => {
 					self.exit(reason);
-					return (step, Capture::Exit(reason))
+					Err(Capture::Exit(reason))
 				},
 				Control::Jump(p) => {
 					self.position = Ok(p);
+					Ok(())
 				},
 				Control::Trap(opcode) => {
 					self.position = Ok(position + 1);
-					return (step, Capture::Trap(opcode));
+					Err(Capture::Trap(opcode))
 				},
+			};
+
+
+			#[cfg(feature = "tracing")]
+			unsafe {sol_compute_meter_remaining();}
+			event!(Event::StepResult (StepResultTrace{
+				result: &result,
+				return_value: &self.return_value(),
+				stack: &self.stack,
+				memory: &self.memory
+			}));
+			#[cfg(feature = "tracing")]
+			unsafe {sol_compute_meter_set_remaining();}
+
+			if let Err(capture) = result {
+				return (step, capture)
 			}
 		}
 
 		(max_steps, Capture::Exit(ExitReason::StepLimitReached))
 	}
 
-	/// Step the machine, executing one opcode. It then returns.
-	pub fn step(&mut self) -> Result<(), Capture<ExitReason, Trap>> {
-		let position = *self.position.as_ref().map_err(|reason| Capture::Exit(reason.clone()))?;
-
-		let opcode = if let Some(opcode) = self.code.get(position).map(|v| Opcode(*v)) {
-			opcode
-		} else {
-			self.position = Err(ExitSucceed::Stopped.into());
-			return Err(Capture::Exit(ExitSucceed::Stopped.into()))
-		};
-
-		match eval(self, opcode, position) {
-			Control::Continue(p) => {
-				self.position = Ok(position + p);
-				Ok(())
-			},
-			Control::Exit(e) => {
-				self.position = Err(e.clone());
-				Err(Capture::Exit(e))
-			},
-			Control::Jump(p) => {
-				self.position = Ok(p);
-				Ok(())
-			},
-			Control::Trap(opcode) => {
-				self.position = Ok(position + 1);
-				Err(Capture::Trap(opcode))
-			},
-		}
-	}
 }
+

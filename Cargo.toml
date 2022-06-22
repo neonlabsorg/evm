@@ -24,7 +24,8 @@ default = ["std"]
 with-codec = ["codec", "evm-core/with-codec", "evm-runtime/with-codec"]
 with-serde = ["serde", "serde_bytes", "evm-core/with-serde", "evm-runtime/with-serde"]
 std = ["evm-core/std", "evm-runtime/std", "sha3/std", "serde/std", "codec/std", "log/std"]
-tracing = ["evm-runtime/tracing"]
+tracing = ["evm-runtime/tracing", "evm-core/tracing"]
+
 #[workspace]
 #members = [
 #  "core",

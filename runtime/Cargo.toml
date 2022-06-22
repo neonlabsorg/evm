@@ -24,5 +24,6 @@ with-codec = ["codec"]
 with-serde = ["serde", "serde_bytes"]
 std = ["evm-core/std", "sha3/std", "environmental/std"]
 tracing = [
-  "environmental"
+  "environmental",
+  "evm-core/tracing"
 ]

@@ -9,161 +9,27 @@
 	clippy::missing_panics_doc
 )]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "tracing"), forbid(unused_imports))]
+// #![cfg_attr(not(feature = "tracing"), forbid(unused_imports))]
 
 extern crate alloc;
 
-#[cfg(feature = "tracing")]
-pub mod tracing;
-
-#[cfg(feature = "tracing")]
-macro_rules! event {
-    ($x:expr) => {
-        use crate::tracing::EventOnStack::*;
-		use solana_program::{tracer_api, compute_meter_remaining, compute_meter_set_remaining};
-
-	    let mut remaining: u64 =0;
-    	compute_meter_remaining::compute_meter_remaining(&mut remaining);
-
-		// let mut message : Vec<u8> = Vec::new();
-    	// bincode::serialize_into(&mut message, &$x).unwrap();
-	    // let mut remaining1: u64 =0;
-    	// compute_meter_remaining::compute_meter_remaining(&mut remaining1);
-
-		let ptr = &$x  as *const _ as *const u8;
-
-    	tracer_api::send_trace_message(ptr);
-	    // let mut remaining1: u64 =0;
-    	// compute_meter_remaining::compute_meter_remaining(&mut remaining1);
-
-	    compute_meter_set_remaining::compute_meter_set_remaining(remaining+12);
-    };
-}
-
-#[cfg(not(feature = "tracing"))]
-macro_rules! event {
-	($x:expr) => {}
-}
 
 mod eval;
-mod context;
 mod interrupt;
 mod handler;
 
 pub use evm_core::*;
 
-pub use crate::context::{CreateScheme, CallScheme, Context};
 pub use crate::interrupt::{Resolve, ResolveCall, ResolveCreate};
-pub use crate::handler::{Transfer, Handler};
+pub use crate::handler::Handler;
 pub use crate::eval::{save_return_value, save_created_address, Control};
-#[cfg(feature = "tracing")]
-pub use crate::tracing::*;
+// #[cfg(feature = "tracing")]
+// pub use evm_core::tracing::*;
 
-use alloc::vec::Vec;
+// #[cfg(feature = "tracing")]
 // use solana_program::{compute_meter_remaining, compute_meter_set_remaining};
 
-macro_rules! step {
-	( $self:expr, $handler:expr, $return:tt $($err:path)?; $($ok:path)? ) => ({
-		let mut skip_step_result_event = true;
-		if let Some((opcode, stack)) = $self.machine.inspect() {
-			let mut remaining: u64 =0;
-			compute_meter_remaining::compute_meter_remaining(&mut remaining);
-			use alloc::vec;
-			let vec : Vec<u8> = vec![1 ,2, 3];
-			event!(Step(
-				StepTrace {
-					context: $self.context.clone(),
-					opcode,
-					position: $self.machine.position().clone(),
-					stack: StackOnStack{
-						data: $self.machine.stack().data() as *const _ as *const u8 as u64,
-						data_len: $self.machine.stack().len(),
-						limit: $self.machine.stack().limit()
-					},
-					memory: MemoryOnStack{
-						data: $self.machine.memory().data() as *const _ as *const u8 as u64,
-						data_len: $self.machine.memory().len(),
-						effective_len: $self.machine.memory().effective_len(),
-						limit: $self.machine.memory().limit(),
-					},
-					vec : vec,
-				}
-			));
-			compute_meter_set_remaining::compute_meter_set_remaining(remaining+12);
-			skip_step_result_event = false;
-	
-			match $handler.pre_validate(&$self.context, opcode, stack) {
-				Ok(()) => (),
-				Err(e) => {
-					$self.machine.exit(e.clone().into());
-					$self.status = Err(e.into());
-				},
-			}
-		}
-
-		match &$self.status {
-			Ok(()) => (),
-			Err(e) => {
-				#[allow(unused_parens)]
-				$return $($err)*(Capture::Exit(e.clone()))
-			},
-		}
-
-		let result = $self.machine.step();
-
-		let return_value = $self.machine.return_value();
-
-		if !skip_step_result_event {
-			event!(StepResult (StepResultTrace{
-				result: result,
-				return_value: return_value.as_slice() as *const _ as *const u8 as u64,
-				return_value_len: return_value.len(),
-
-				stack: StackOnStack{
-					data: $self.machine.stack().data() as *const _ as *const u8 as u64,
-					data_len: $self.machine.stack().len(),
-					limit: $self.machine.stack().limit()
-				},
-				memory: MemoryOnStack{
-					data: $self.machine.memory().data() as *const _ as *const u8 as u64,
-					data_len: $self.machine.memory().len(),
-					effective_len: $self.machine.memory().effective_len(),
-					limit: $self.machine.memory().limit(),
-				}
-			}));
-		}
-
-		match result {
-			Ok(()) => $($ok)?(()),
-			Err(Capture::Exit(e)) => {
-				$self.status = Err(e.clone());
-				#[allow(unused_parens)]
-				$return $($err)*(Capture::Exit(e))
-			},
-			Err(Capture::Trap(opcode)) => {
-				match eval::eval($self, opcode, $handler) {
-					eval::Control::Continue => $($ok)?(()),
-					eval::Control::CallInterrupt(interrupt) => {
-						let resolve = ResolveCall::new($self);
-						#[allow(unused_parens)]
-						$return $($err)*(Capture::Trap(Resolve::Call(interrupt, resolve)))
-					},
-					eval::Control::CreateInterrupt(interrupt) => {
-						let resolve = ResolveCreate::new($self);
-						#[allow(unused_parens)]
-						$return $($err)*(Capture::Trap(Resolve::Create(interrupt, resolve)))
-					},
-					eval::Control::Exit(exit) => {
-						$self.machine.exit(exit.clone().into());
-						$self.status = Err(exit.clone());
-						#[allow(unused_parens)]
-						$return $($err)*(Capture::Exit(exit))
-					},
-				}
-			},
-		}
-	});
-}
+use alloc::vec::Vec;
 
 /// EVM runtime.
 ///
@@ -209,14 +75,6 @@ impl Runtime {
 		&self.machine
 	}
 
-	/// Step the runtime.
-	pub fn step<'a, H: Handler>(
-		&'a mut self,
-		handler: &mut H,
-	) -> Result<(), Capture<ExitReason, Resolve<'a, H>>> {
-		step!(self, handler, return Err; Ok)
-	}
-
 	/// Loop stepping the runtime until it stops.
 	pub fn run<'a, H: Handler>(
 		&'a mut self,
@@ -233,7 +91,7 @@ impl Runtime {
 			let (steps_executed, capture) = {
 				let context = &self.context;
 				let pre_validate = |opcode, stack: &Stack| { handler.pre_validate(context, opcode, stack) };
-				self.machine.run(max_steps - steps, pre_validate)
+				self.machine.run(max_steps - steps, pre_validate, &self.context)
 			};
 			steps += steps_executed;
 

@@ -50,3 +50,17 @@ pub struct Context {
 	/// Apparent value of the EVM.
 	pub apparent_value: U256,
 }
+
+
+/// Transfer from source to target, with given value.
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
+#[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Transfer {
+	/// Source address.
+	pub source: H160,
+	/// Target address.
+	pub target: H160,
+	/// Transfer value.
+	pub value: U256,
+}
