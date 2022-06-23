@@ -5,8 +5,6 @@ pub type Trap = Opcode;
 
 /// Capture represents the result of execution.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
-#[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Capture<E, T> {
 	/// The machine has exited. It cannot be executed again.
 	Exit(E),

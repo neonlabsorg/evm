@@ -17,13 +17,13 @@ pub struct Memory {
 impl Memory {
 	/// Create a new memory with the given limit.
 	#[must_use]
-		pub const fn new(limit: usize) -> Self {
-			Self {
-				data: Vec::new(),
-				effective_len: 0_usize,
-				limit,
-			}
+	pub const fn new(limit: usize) -> Self {
+		Self {
+			data: Vec::new(),
+			effective_len: 0_usize,
+			limit,
 		}
+	}
 
 	pub fn from(data: &[u8], len: usize, limit: usize) -> Self {
 		Self {
@@ -160,5 +160,4 @@ impl Memory {
 
 		self.set(memory_offset, data_by_offset, Some(len))
 	}
-
 }

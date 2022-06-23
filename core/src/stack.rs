@@ -174,10 +174,6 @@ impl Stack {
 		Ok(())
 	}
 
-	pub fn data(&self) -> &[U256] {
-		&self.data
-	}
-
 	pub fn data_vec(&self) -> &Vec<U256> {
 		&self.data
 	}

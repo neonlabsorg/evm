@@ -9,7 +9,7 @@
 	clippy::missing_panics_doc
 )]
 #![cfg_attr(not(feature = "std"), no_std)]
-// #![cfg_attr(not(feature = "tracing"), forbid(unused_imports))]
+#![cfg_attr(not(feature = "tracing"), forbid(unused_imports))]
 
 extern crate alloc;
 
@@ -23,11 +23,6 @@ pub use evm_core::*;
 pub use crate::interrupt::{Resolve, ResolveCall, ResolveCreate};
 pub use crate::handler::Handler;
 pub use crate::eval::{save_return_value, save_created_address, Control};
-// #[cfg(feature = "tracing")]
-// pub use evm_core::tracing::*;
-
-// #[cfg(feature = "tracing")]
-// use solana_program::{compute_meter_remaining, compute_meter_set_remaining};
 
 use alloc::vec::Vec;
 

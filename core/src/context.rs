@@ -2,8 +2,6 @@ use crate::{H160, U256, H256};
 
 /// Create scheme.
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
-#[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum CreateScheme {
 	/// Legacy create scheme of `CREATE`.
 	Legacy {
@@ -25,8 +23,6 @@ pub enum CreateScheme {
 
 /// Call scheme.
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
-#[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum CallScheme {
 	/// `CALL`
 	Call,

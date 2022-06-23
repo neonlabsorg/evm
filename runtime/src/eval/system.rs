@@ -2,15 +2,13 @@ use core::cmp::min;
 use alloc::vec::Vec;
 use crate::{Runtime, ExitError, Handler, Capture, Transfer, ExitReason, CreateScheme, CallScheme, Context, ExitSucceed, ExitFatal, H160, H256, U256};
 use super::Control;
-// use evm_core::event;
+use evm_core::event;
 
-// #[cfg(feature = "tracing")]
-// use evm_core::*;
-// #[cfg(feature = "tracing")]
-// use solana_program::{compute_meter_remaining, compute_meter_set_remaining};
+#[cfg(feature = "tracing")]
+use evm_core::{Event, SStoreTrace, SLoadTrace};
 
-// #[cfg(feature = "tracing")]
-// use solana_program::tracer_api;
+#[cfg(feature = "tracing")]
+use solana_program::tracer_api;
 
 
 pub fn sha3<H: Handler>(runtime: &mut Runtime, handler: &H) -> Control<H> {
@@ -188,20 +186,13 @@ pub fn sload<H: Handler>(runtime: &mut Runtime, handler: &H) -> Control<H> {
 	let value = handler.storage(runtime.context.address, index);
 	push_u256!(runtime, value);
 
-	// #[cfg(feature = "tracing")]
-	// let mut remaining: u64 =0;
-	// #[cfg(feature = "tracing")]
-	// compute_meter_remaining::compute_meter_remaining(&mut remaining);
-	//
-	// event!(Event::SLoad(
-	// 	SLoadTrace{
-	// 		address: runtime.context.address,
-	// 		index,
-	// 		value
-	// 	}
-	// ));
-	// #[cfg(feature = "tracing")]
-	// compute_meter_set_remaining::compute_meter_set_remaining(remaining+12);
+	event!(Event::SLoad(
+		SLoadTrace{
+			address: runtime.context.address,
+			index,
+			value
+		}
+	));
 
 	Control::Continue
 }
@@ -209,19 +200,12 @@ pub fn sload<H: Handler>(runtime: &mut Runtime, handler: &H) -> Control<H> {
 pub fn sstore<H: Handler>(runtime: &mut Runtime, handler: &mut H) -> Control<H> {
 	pop_u256!(runtime, index, value);
 
-	// #[cfg(feature = "tracing")]
-	// let mut remaining: u64 =0;
-	// #[cfg(feature = "tracing")]
-	// compute_meter_remaining::compute_meter_remaining(&mut remaining);
-	//
-	// event!(Event::SStore( SStoreTrace{
-	// 	address: runtime.context.address,
-	// 	index,
-	// 	value
-	// }
-	// ));
-	// #[cfg(feature = "tracing")]
-	// compute_meter_set_remaining::compute_meter_set_remaining(remaining+12);
+	event!(Event::SStore( SStoreTrace{
+		address: runtime.context.address,
+		index,
+		value
+		}
+	));
 
 	match handler.set_storage(runtime.context.address, index, value) {
 		Ok(()) => Control::Continue,

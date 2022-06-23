@@ -1,12 +1,5 @@
-//! Tools for tracing runtime events
-
-// use evm::Context;
-// use evm::{H160, H256, U256, Stack, Memory, Opcode, Capture, Trap};
-// use evm_runtime::{CreateScheme, ExitReason, Transfer};
-
-use crate::{H160, H256, U256, Context, Opcode, Stack, Memory, Capture, ExitReason, Trap, CreateScheme,Transfer};
+use crate::{H160, H256, U256, Context, Opcode, Stack, Memory, Capture, ExitReason, Trap, CreateScheme, Transfer};
 use alloc::vec::Vec;
-// use solana_program::{tracer_api, compute_meter_remaining, compute_meter_set_remaining};
 
 
 #[derive(Debug,  Clone)]
@@ -135,7 +128,7 @@ pub struct SStoreTrace {
 
 /// Trace event
 #[derive(Debug,  Clone)]
-#[allow(dead_code)]
+// #[allow(dead_code)]
 pub enum Event<'a>{
     Call(CallTrace<'a>) ,
     Create(CreateTrace<'a>) ,

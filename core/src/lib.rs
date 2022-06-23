@@ -1,8 +1,7 @@
 //! Core layer for EVM.
 
 #![deny(warnings)]
-// #![forbid(unused_variables, unused_imports)]
-// #![forbid( unused_imports)]
+#![forbid(unused_variables, unused_imports)]
 #![deny(clippy::all, clippy::pedantic, clippy::nursery)]
 #![allow(
 	clippy::module_name_repetitions,
@@ -43,41 +42,21 @@ use crate::eval::{eval, Control};
 pub use crate::tracing::*;
 
 #[cfg(feature = "tracing")]
-#[allow(unused_imports)]
-use solana_program::{compute_meter_remaining, compute_meter_set_remaining, tracer_api};
+use solana_program::tracer_api;
 
 #[macro_export]
 #[cfg(feature = "tracing")]
 macro_rules! event {
     ($x:expr) => {
-        // use crate::tracing::Event::*;
-		// use solana_program::tracer_api;
-
-	    // let mut remaining: u64 =0;
-    	// compute_meter_remaining::compute_meter_remaining(&mut remaining);
-		// remaining = remaining + 7;
-		let _ptr = &$x  as *const _ as *const u8;
-    	tracer_api::send_trace_message(ptr);
-
-	    // compute_meter_set_remaining::compute_meter_set_remaining(remaining);
+		let ptr = &$x  as *const _ as *const u8;
+		tracer_api::send_trace_message(ptr);
     };
 }
-
 
 #[macro_export]
 #[cfg(not(feature = "tracing"))]
 macro_rules! event {
 	($x:expr) => {}
-}
-
-#[cfg(feature = "tracing")]
-extern "C" {
-	fn sol_compute_meter_remaining() -> u64;
-}
-
-#[cfg(feature = "tracing")]
-extern "C" {
-	fn sol_compute_meter_set_remaining() -> u64;
 }
 
 /// Core execution layer for EVM.
@@ -115,7 +94,7 @@ impl Machine {
 	pub fn memory_mut(&mut self) -> &mut Memory { &mut self.memory }
 
         /// Return a reference of the program counter.
-	pub fn position(&self) -> &Result<usize, ExitReason> {
+        pub fn position(&self) -> &Result<usize, ExitReason> {
                 &self.position
         }
 
@@ -175,7 +154,7 @@ impl Machine {
 	pub fn run<F>(&mut self,
 				  max_steps: u64,
 				  mut pre_validate: F,
-				  #[allow(unused_variables)] context : &Context
+				  _context : &Context
 	) -> (u64, Capture<ExitReason, Trap>)
 		where F: FnMut(Opcode, &Stack) -> Result<(), ExitError>
 	{
@@ -193,21 +172,15 @@ impl Machine {
 				}
 			};
 
-
-			//
-			// #[cfg(feature = "tracing")]
-			// unsafe {sol_compute_meter_remaining();}
-			// event!(Event::Step(
-			// 	StepTrace {
-			// 		context: context,
-			// 		opcode,
-			// 		position: &self.position,
-			// 		stack: &self.stack,
-			// 		memory: &self.memory,
-			// 	}
-			// ));
-			// #[cfg(feature = "tracing")]
-			// unsafe {sol_compute_meter_set_remaining();}
+			event!(Event::Step(
+				StepTrace {
+					context: _context,
+					opcode,
+					position: &self.position,
+					stack: &self.stack,
+					memory: &self.memory,
+				}
+			));
 
 			if let Err(error) = pre_validate(opcode, &self.stack()) {
 				let reason = ExitReason::from(error);
@@ -234,17 +207,12 @@ impl Machine {
 				},
 			};
 
-
-			#[cfg(feature = "tracing")]
-			unsafe {sol_compute_meter_remaining();}
 			event!(Event::StepResult (StepResultTrace{
 				result: &result,
 				return_value: &self.return_value(),
 				stack: &self.stack,
 				memory: &self.memory
 			}));
-			#[cfg(feature = "tracing")]
-			unsafe {sol_compute_meter_set_remaining();}
 
 			if let Err(capture) = result {
 				return (step, capture)
@@ -255,4 +223,3 @@ impl Machine {
 	}
 
 }
-
