@@ -38,6 +38,7 @@ pub enum CallScheme {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub struct Context {
 	/// Execution address.
 	pub address: H160,

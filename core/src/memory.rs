@@ -7,6 +7,7 @@ use crate::{ExitError, ExitFatal};
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub struct Memory {
 	#[cfg_attr(feature = "with-serde", serde(with = "serde_bytes"))]
 	data: Vec<u8>,

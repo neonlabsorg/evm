@@ -34,7 +34,6 @@ pub use crate::error::{Trap, Capture, ExitReason, ExitSucceed, ExitError, ExitRe
 pub use crate::primitive_types::{H160, H256, U256, U512};
 pub use crate::context::{Context, CreateScheme, CallScheme, Transfer};
 
-use core::ops::Range;
 use alloc::vec::Vec;
 use crate::eval::{eval, Control};
 
@@ -62,6 +61,7 @@ macro_rules! event {
 /// Core execution layer for EVM.
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub struct Machine {
 	/// Program data.
 	#[cfg_attr(feature = "with-serde", serde(with = "serde_bytes"))]
@@ -72,7 +72,7 @@ pub struct Machine {
 	/// Program counter.
 	position: Result<usize, ExitReason>,
 	/// Return value.
-	return_range: Range<usize>,
+	return_range: (usize, usize),
 	/// Code validity maps.
 	valids: Valids,
 	/// Memory.
@@ -113,7 +113,7 @@ impl Machine {
 			data,
 			code,
 			position: Ok(0),
-			return_range: 0..0,
+			return_range: (0, 0),
 			valids,
 			memory: Memory::new(memory_limit),
 			stack: Stack::new(stack_limit),
@@ -138,15 +138,15 @@ impl Machine {
 	/// Gets return value len by `return_range`
 	#[must_use]
 	pub fn return_value_len(&self) -> usize {
-		self.return_range.end - self.return_range.start
+		self.return_range.1
 	}
 
 	/// Copy and get the return value of the machine, if any.
 	#[must_use]
 	pub fn return_value(&self) -> Vec<u8> {
 		self.memory.get(
-			self.return_range.start,
-			self.return_range.end - self.return_range.start,
+			self.return_range.0,
+			self.return_range.1,
 		)
 	}
 

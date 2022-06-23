@@ -52,6 +52,7 @@ mod serde_vec_u256 {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub struct Stack {
 	#[cfg_attr(feature = "with-serde", serde(with="serde_vec_u256"))]
 	data: Vec<U256>,

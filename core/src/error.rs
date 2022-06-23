@@ -17,6 +17,7 @@ pub enum Capture<E, T> {
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub enum ExitReason {
 	/// Machine reached a step limit
 	StepLimitReached,
@@ -61,6 +62,7 @@ impl ExitReason {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub enum ExitSucceed {
 	/// Machine encountered an explicit stop.
 	Stopped,
@@ -80,6 +82,7 @@ impl From<ExitSucceed> for ExitReason {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub enum ExitRevert {
 	/// Machine encountered an explicit revert.
 	Reverted,
@@ -95,6 +98,7 @@ impl From<ExitRevert> for ExitReason {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub enum ExitError {
 	/// Trying to pop from an empty stack.
 	StackUnderflow,
@@ -140,6 +144,7 @@ impl From<ExitError> for ExitReason {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(borsh::BorshSerialize, borsh::BorshDeserialize)]
 pub enum ExitFatal {
 	/// The operation is not supported.
 	NotSupported,
