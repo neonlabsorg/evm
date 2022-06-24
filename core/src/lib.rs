@@ -41,7 +41,7 @@ use crate::eval::{eval, Control};
 pub use crate::tracing::*;
 
 #[cfg(feature = "tracing")]
-use solana_program::tracer_api;
+use solana_program_neon::tracer_api;
 
 #[macro_export]
 #[cfg(feature = "tracing")]

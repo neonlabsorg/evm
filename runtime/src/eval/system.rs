@@ -8,7 +8,7 @@ use evm_core::event;
 use evm_core::{Event, SStoreTrace, SLoadTrace};
 
 #[cfg(feature = "tracing")]
-use solana_program::tracer_api;
+use solana_program_neon::tracer_api;
 
 
 pub fn sha3<H: Handler>(runtime: &mut Runtime, handler: &H) -> Control<H> {
