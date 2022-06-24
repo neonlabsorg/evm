@@ -41,14 +41,17 @@ use crate::eval::{eval, Control};
 pub use crate::tracing::*;
 
 #[cfg(feature = "tracing")]
-use solana_program_neon::tracer_api;
+extern "C" {fn sol_send_trace_message(val: *const u8) -> u64;}
+
 
 #[macro_export]
 #[cfg(feature = "tracing")]
 macro_rules! event {
     ($x:expr) => {
 		let ptr = &$x  as *const _ as *const u8;
-		tracer_api::send_trace_message(ptr);
+            unsafe {
+                sol_send_trace_message(ptr);
+            }
     };
 }
 

@@ -19,8 +19,6 @@ borsh = { version = "0.9" }
 serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
 impl-serde = { version = "0.3", optional = true }
 serde_bytes = { version = "0.11.5", optional = true }
-#solana-program = { version = "=1.9.12", path = "/home/user/CLionProjects/neonlabs/solana/sdk/program", default_features = false }
-solana-program_neon = { version = "=1.9.12", path = "/home/user/CLionProjects/neonlabs/solana/sdk/program", default_features = false, package = "solana-program" }
 
 [dev-dependencies]
 hex = "0.4"
