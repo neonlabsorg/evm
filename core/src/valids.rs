@@ -36,8 +36,7 @@ impl Valids {
 
 	#[must_use]
 	pub fn compute(code: &[u8]) -> Vec<u8> {
-		let valids_bytes_len = (code.len() / 8) + 1;
-		let mut valids: Vec<u8> = vec![0; valids_bytes_len];
+		let mut valids: Vec<u8> = vec![0; Self::size_needed(code.len())];
 	
 		let mut i = 0;
 		while i < code.len() {
@@ -57,5 +56,27 @@ impl Valids {
 		}
 	
 		valids
+	}
+
+	#[inline]
+	#[must_use]
+	/// Returns minimal number of bytes needed for storing `valids` bitmap.
+	pub fn size_needed(code_len: usize) -> usize {
+		(code_len + 7) >> 3
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::Valids;
+
+	#[test]
+	fn test_size_needed() {
+		assert_eq!(Valids::size_needed(0), 0);
+		assert_eq!(Valids::size_needed(1), 1);
+		assert_eq!(Valids::size_needed(8), 1);
+		assert_eq!(Valids::size_needed(9), 2);
+		assert_eq!(Valids::size_needed(16), 2);
+		assert_eq!(Valids::size_needed(17), 3);
 	}
 }
