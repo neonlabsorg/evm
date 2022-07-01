@@ -23,7 +23,7 @@ mod eval;
 mod utils;
 mod primitive_types;
 mod context;
-#[cfg(feature = "tracing")]
+// #[cfg(feature = "tracing")]
 mod tracing;
 
 pub use crate::memory::Memory;

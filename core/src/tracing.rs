@@ -1,7 +1,7 @@
 use crate::{H160, H256, U256, Context, Opcode, Stack, Memory, Capture, ExitReason, Trap, CreateScheme, Transfer};
 use alloc::vec::Vec;
 
-
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct CallTrace<'a>{
     /// Called code address
@@ -18,6 +18,7 @@ pub struct CallTrace<'a>{
     pub context: &'a Context,
 }
 
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct CreateTrace<'a>{
     /// Creator address
@@ -34,6 +35,7 @@ pub struct CreateTrace<'a>{
     pub target_gas: Option<u64>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct SuicideTrace{
     /// Suicided address
@@ -44,6 +46,7 @@ pub struct SuicideTrace{
     pub balance: U256,
 }
 
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct ExitTrace<'a>{
     pub reason: &'a ExitReason,
@@ -51,6 +54,7 @@ pub struct ExitTrace<'a>{
 }
 
 
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct TransactCallTrace<'a>{
     /// Caller account address
@@ -65,6 +69,7 @@ pub struct TransactCallTrace<'a>{
     pub gas_limit: U256,
 }
 
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct TransactCreateTrace<'a>{
     /// Creator address
@@ -79,6 +84,7 @@ pub struct TransactCreateTrace<'a>{
     pub address: H160,
 }
 
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct TransactCreate2Trace<'a>{
     /// Creator address
@@ -95,6 +101,7 @@ pub struct TransactCreate2Trace<'a>{
     pub address: H160,
 }
 
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct StepTrace<'a>{
     pub context: &'a Context,
@@ -104,6 +111,7 @@ pub struct StepTrace<'a>{
     pub memory: &'a Memory,
 }
 
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct StepResultTrace<'a>{
     pub result: &'a Result<(), Capture<ExitReason, Trap>>,
@@ -112,6 +120,7 @@ pub struct StepResultTrace<'a>{
     pub memory: &'a Memory,
 }
 
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct SLoadTrace{
     pub address: H160,
@@ -119,6 +128,7 @@ pub struct SLoadTrace{
     pub value: U256
 }
 
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
 pub struct SStoreTrace {
     pub address: H160,
@@ -127,8 +137,8 @@ pub struct SStoreTrace {
 }
 
 /// Trace event
+#[allow(dead_code)]
 #[derive(Debug,  Clone)]
-// #[allow(dead_code)]
 pub enum Event<'a>{
     Call(CallTrace<'a>) ,
     Create(CreateTrace<'a>) ,
