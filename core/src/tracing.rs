@@ -126,9 +126,44 @@ pub struct SStoreTrace {
     pub value: U256
 }
 
+#[derive(Debug, Clone)]
+pub struct TransferTrace{
+    pub source: H160,
+    pub target: H160,
+    pub value: U256,
+}
+
+#[derive(Debug, Clone)]
+pub struct WithDrawTrace{
+    pub source: H160,
+    pub value: U256,
+}
+
+#[derive(Debug, Clone)]
+pub struct SetStorageTrace{
+    pub address: H160,
+    pub key: U256,
+    pub value: U256,
+}
+
+#[derive(Debug, Clone)]
+pub struct IncrementNonceTrace{
+    pub address: H160,
+}
+
+#[derive(Debug, Clone)]
+pub struct SetCodeTrace<'a>{
+    pub address: H160,
+    pub code: &'a Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SelfDestructTrace{
+    pub address: H160,
+}
+
 /// Trace event
 #[derive(Debug,  Clone)]
-// #[allow(dead_code)]
 pub enum Event<'a>{
     Call(CallTrace<'a>) ,
     Create(CreateTrace<'a>) ,
@@ -141,4 +176,10 @@ pub enum Event<'a>{
     StepResult(StepResultTrace<'a>),
     SLoad(SLoadTrace),
     SStore(SStoreTrace),
+    Transfer(TransferTrace),
+    WithDraw(WithDrawTrace),
+    SetStorage(SetStorageTrace),
+    IncrementNonce(IncrementNonceTrace),
+    SetCode(SetCodeTrace),
+    SelfDestruct(SelfDestructTrace),
 }
