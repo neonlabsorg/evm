@@ -180,6 +180,6 @@ pub enum Event<'a>{
     WithDraw(WithDrawTrace),
     SetStorage(SetStorageTrace),
     IncrementNonce(IncrementNonceTrace),
-    SetCode(SetCodeTrace),
+    SetCode(SetCodeTrace<'a>),
     SelfDestruct(SelfDestructTrace),
 }
