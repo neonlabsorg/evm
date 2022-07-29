@@ -23,7 +23,7 @@ mod eval;
 mod utils;
 mod primitive_types;
 mod context;
-#[cfg(feature = "tracing")]
+// #[cfg(feature = "tracing")]
 mod tracing;
 
 pub use crate::memory::Memory;
@@ -37,7 +37,7 @@ pub use crate::context::{Context, CreateScheme, CallScheme, Transfer};
 use alloc::vec::Vec;
 use crate::eval::{eval, Control};
 
-#[cfg(feature = "tracing")]
+// #[cfg(feature = "tracing")]
 pub use crate::tracing::*;
 
 #[cfg(feature = "tracing")]
