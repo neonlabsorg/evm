@@ -49,6 +49,12 @@ pub fn selfbalance<H: Handler>(runtime: &mut Runtime, handler: &H) -> Control<H>
 	Control::Continue
 }
 
+pub fn basefee<H: Handler>(runtime: &mut Runtime, _handler: &H) -> Control<H> {
+	push_u256!(runtime, U256::zero());
+
+	Control::Continue
+}
+
 pub fn origin<H: Handler>(runtime: &mut Runtime, handler: &H) -> Control<H> {
 	let ret = H256::from(handler.origin());
 	push!(runtime, ret);
