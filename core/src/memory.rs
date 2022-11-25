@@ -26,6 +26,13 @@ impl Memory {
 		}
 	}
 
+	pub fn from(data: &[u8], len: usize, limit: usize) -> Self {
+		Self {
+			data: Vec::from(data),
+			effective_len: len,
+			limit,
+		}
+	}
 	/// Memory limit.
 	#[must_use]
 	pub const fn limit(&self) -> usize {
@@ -50,9 +57,9 @@ impl Memory {
 		self.len() == 0
 	}
 
-        pub fn data(&self) -> &[u8] {
-            &self.data
-        }
+	pub fn data(&self) -> &[u8] { &self.data }
+
+	pub fn data_vec(&self) -> &Vec<u8> { &self.data }
 
 	/// Resize the memory, making it cover the memory region of `offset..(offset
 	/// + len)`, with 32 bytes as the step. If the length is zero, this function
