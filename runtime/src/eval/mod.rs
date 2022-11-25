@@ -33,6 +33,7 @@ pub fn eval<H: Handler>(state: &mut Runtime, opcode: Opcode, handler: &mut H) ->
 		Opcode::ADDRESS => system::address(state),
 		Opcode::BALANCE => system::balance(state, handler),
 		Opcode::SELFBALANCE => system::selfbalance(state, handler),
+		Opcode::BASEFEE => system::basefee(state, handler),
 		Opcode::ORIGIN => system::origin(state, handler),
 		Opcode::CALLER => system::caller(state),
 		Opcode::CALLVALUE => system::callvalue(state),
