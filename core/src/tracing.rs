@@ -1,6 +1,11 @@
 use crate::{H160, H256, U256, Context, Opcode, Stack, Memory, Capture, ExitReason, Trap, CreateScheme, Transfer};
 use alloc::vec::Vec;
 
+environmental::environmental!(listener: dyn EventListener + 'static);
+
+pub trait EventListener {
+    fn event(&mut self, event: Event);
+}
 
 #[derive(Debug,  Clone)]
 pub struct CallTrace<'a>{
@@ -182,4 +187,13 @@ pub enum Event<'a>{
     IncrementNonce(IncrementNonceTrace),
     SetCode(SetCodeTrace<'a>),
     SelfDestruct(SelfDestructTrace),
+}
+
+
+pub fn with<F: FnOnce(&mut (dyn EventListener + 'static))>(f: F) {
+    listener::with(f);
+}
+
+pub fn using<R, F: FnOnce() -> R>(new: &mut (dyn EventListener + 'static), f: F) -> R {
+    listener::using(new, f)
 }

@@ -5,10 +5,7 @@ use super::Control;
 use evm_core::event;
 
 #[cfg(feature = "tracing")]
-use evm_core::{Event, SStoreTrace, SLoadTrace};
-
-#[cfg(feature = "tracing")]
-extern "C" {fn sol_send_trace_message(val: *const u8) -> u64;}
+use evm_core::{Event, SStoreTrace, SLoadTrace, tracing::with as with};
 
 
 pub fn sha3<H: Handler>(runtime: &mut Runtime, handler: &H) -> Control<H> {

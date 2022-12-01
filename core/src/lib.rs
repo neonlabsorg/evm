@@ -1,7 +1,9 @@
 //! Core layer for EVM.
 
 #![deny(warnings)]
-#![forbid(unused_variables, unused_imports)]
+#![forbid(unused_variables)]
+// TODO: to pay attention
+// #![forbid(unused_variables, unused_imports)]
 #![deny(clippy::all, clippy::pedantic, clippy::nursery)]
 #![allow(
 	clippy::module_name_repetitions,
@@ -23,8 +25,8 @@ mod eval;
 mod utils;
 mod primitive_types;
 mod context;
-// #[cfg(feature = "tracing")]
-mod tracing;
+#[cfg(feature = "tracing")]
+pub mod tracing;
 
 pub use crate::memory::Memory;
 pub use crate::stack::Stack;
@@ -37,21 +39,15 @@ pub use crate::context::{Context, CreateScheme, CallScheme, Transfer};
 use alloc::vec::Vec;
 use crate::eval::{eval, Control};
 
-// #[cfg(feature = "tracing")]
-pub use crate::tracing::*;
-
 #[cfg(feature = "tracing")]
-extern "C" {fn sol_send_trace_message(val: *const u8) -> u64;}
+pub use crate::tracing::*;
 
 
 #[macro_export]
 #[cfg(feature = "tracing")]
 macro_rules! event {
     ($x:expr) => {
-		let ptr = &$x  as *const _ as *const u8;
-            unsafe {
-                sol_send_trace_message(ptr);
-            }
+         with(|listener| listener.event($x));
     };
 }
 
