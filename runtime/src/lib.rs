@@ -13,108 +13,18 @@
 
 extern crate alloc;
 
-#[cfg(feature = "tracing")]
-pub mod tracing;
-
-#[cfg(feature = "tracing")]
-macro_rules! event {
-	($x:expr) => {
-		use crate::tracing::Event::*;
-                crate::tracing::with(|listener| listener.event($x));
-	}
-}
-
-#[cfg(not(feature = "tracing"))]
-macro_rules! event {
-	($x:expr) => {}
-}
 
 mod eval;
-mod context;
 mod interrupt;
 mod handler;
 
 pub use evm_core::*;
 
-pub use crate::context::{CreateScheme, CallScheme, Context};
 pub use crate::interrupt::{Resolve, ResolveCall, ResolveCreate};
-pub use crate::handler::{Transfer, Handler};
+pub use crate::handler::Handler;
 pub use crate::eval::{save_return_value, save_created_address, Control};
 
 use alloc::vec::Vec;
-
-macro_rules! step {
-	( $self:expr, $handler:expr, $return:tt $($err:path)?; $($ok:path)? ) => ({
-		let mut skip_step_result_event = true;
-		if let Some((opcode, stack)) = $self.machine.inspect() {
-			event!(Step {
-				context: &$self.context,
-				opcode,
-				position: $self.machine.position(),
-				stack,
-				memory: $self.machine.memory()
-			});
-			skip_step_result_event = false;
-	
-			match $handler.pre_validate(&$self.context, opcode, stack) {
-				Ok(()) => (),
-				Err(e) => {
-					$self.machine.exit(e.clone().into());
-					$self.status = Err(e.into());
-				},
-			}
-		}
-
-		match &$self.status {
-			Ok(()) => (),
-			Err(e) => {
-				#[allow(unused_parens)]
-				$return $($err)*(Capture::Exit(e.clone()))
-			},
-		}
-
-		let result = $self.machine.step();
-
-		if !skip_step_result_event {
-			event!(StepResult {
-				result: &result,
-				return_value: &$self.machine.return_value(),
-							stack: $self.machine.stack(),
-							memory: $self.machine.memory(),
-			});
-		}
-
-		match result {
-			Ok(()) => $($ok)?(()),
-			Err(Capture::Exit(e)) => {
-				$self.status = Err(e.clone());
-				#[allow(unused_parens)]
-				$return $($err)*(Capture::Exit(e))
-			},
-			Err(Capture::Trap(opcode)) => {
-				match eval::eval($self, opcode, $handler) {
-					eval::Control::Continue => $($ok)?(()),
-					eval::Control::CallInterrupt(interrupt) => {
-						let resolve = ResolveCall::new($self);
-						#[allow(unused_parens)]
-						$return $($err)*(Capture::Trap(Resolve::Call(interrupt, resolve)))
-					},
-					eval::Control::CreateInterrupt(interrupt) => {
-						let resolve = ResolveCreate::new($self);
-						#[allow(unused_parens)]
-						$return $($err)*(Capture::Trap(Resolve::Create(interrupt, resolve)))
-					},
-					eval::Control::Exit(exit) => {
-						$self.machine.exit(exit.clone().into());
-						$self.status = Err(exit.clone());
-						#[allow(unused_parens)]
-						$return $($err)*(Capture::Exit(exit))
-					},
-				}
-			},
-		}
-	});
-}
 
 /// EVM runtime.
 ///
@@ -161,14 +71,6 @@ impl Runtime {
 		&self.machine
 	}
 
-	/// Step the runtime.
-	pub fn step<'a, H: Handler>(
-		&'a mut self,
-		handler: &mut H,
-	) -> Result<(), Capture<ExitReason, Resolve<'a, H>>> {
-		step!(self, handler, return Err; Ok)
-	}
-
 	/// Loop stepping the runtime until it stops.
 	pub fn run<'a, H: Handler>(
 		&'a mut self,
@@ -185,7 +87,7 @@ impl Runtime {
 			let (steps_executed, capture) = {
 				let context = &self.context;
 				let pre_validate = |opcode, stack: &Stack| { handler.pre_validate(context, opcode, stack) };
-				self.machine.run(max_steps - steps, pre_validate)
+				self.machine.run(max_steps - steps, pre_validate, &self.context)
 			};
 			steps += steps_executed;
 

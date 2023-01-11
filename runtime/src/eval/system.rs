@@ -1,9 +1,12 @@
 use core::cmp::min;
 use alloc::vec::Vec;
-use crate::{Runtime, ExitError, Handler, Capture, Transfer, ExitReason,
-			CreateScheme, CallScheme, Context, ExitSucceed, ExitFatal,
-			H160, H256, U256};
+use crate::{Runtime, ExitError, Handler, Capture, Transfer, ExitReason, CreateScheme, CallScheme, Context, ExitSucceed, ExitFatal, H160, H256, U256};
 use super::Control;
+use evm_core::event;
+
+#[cfg(feature = "tracing")]
+use evm_core::{Event, SStoreTrace, SLoadTrace, tracing::with as with};
+
 
 pub fn sha3<H: Handler>(runtime: &mut Runtime, handler: &H) -> Control<H> {
 	pop_u256!(runtime, from, len);
@@ -186,11 +189,13 @@ pub fn sload<H: Handler>(runtime: &mut Runtime, handler: &H) -> Control<H> {
 	let value = handler.storage(runtime.context.address, index);
 	push_u256!(runtime, value);
 
-	event!(SLoad {
-		address: runtime.context.address,
-		index,
-		value
-	});
+	event!(Event::SLoad(
+		SLoadTrace{
+			address: runtime.context.address,
+			index,
+			value
+		}
+	));
 
 	Control::Continue
 }
@@ -198,11 +203,12 @@ pub fn sload<H: Handler>(runtime: &mut Runtime, handler: &H) -> Control<H> {
 pub fn sstore<H: Handler>(runtime: &mut Runtime, handler: &mut H) -> Control<H> {
 	pop_u256!(runtime, index, value);
 
-	event!(SStore {
+	event!(Event::SStore( SStoreTrace{
 		address: runtime.context.address,
 		index,
 		value
-	});
+		}
+	));
 
 	match handler.set_storage(runtime.context.address, index, value) {
 		Ok(()) => Control::Continue,
