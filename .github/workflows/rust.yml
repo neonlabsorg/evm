@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "k8s-prod"]
     steps:
     - uses: actions/checkout@v2
     - name: Build
@@ -19,7 +19,7 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
   jsontests:
-    runs-on: ubuntu-latest
+    runs-on: ["self-hosted", "k8s-prod"]
     steps:
     - uses: actions/checkout@v2
       with:
